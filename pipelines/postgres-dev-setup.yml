@@ -1,0 +1,76 @@
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: GKE-Variables # contains gcpKeyBase64, dockerhubUser, dockerhubPass, etc.
+
+  - name: GCP_KEY_BASE64
+    value: "$(gcpKeyBase64)"
+
+  - name: GCP_PROJECT
+    value: "iels-org"
+
+  - name: GKE_CLUSTER
+    value: "autopilot-cluster-1"
+
+  - name: HELM_NAMESPACE
+    value: "infra"
+
+steps:
+  # Install gcloud CLI
+  - script: |
+      echo "Installing Google Cloud SDK..."
+      sudo apt-get update
+      sudo apt-get install -y apt-transport-https ca-certificates gnupg
+      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+      sudo apt-get update && sudo apt-get install -y google-cloud-cli
+    displayName: "Install Google Cloud SDK"
+
+  # Install GKE auth plugin
+  - script: |
+      echo "Installing GKE auth plugin..."
+      sudo apt-get update
+      sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+    displayName: "Install GKE Auth Plugin"
+
+  # Authenticate to GKE using Base64 key
+  - script: |
+      echo "Decoding GCP key..."
+      echo "$GCP_KEY_BASE64" | base64 --decode > key.json
+
+      echo "Authenticating..."
+      gcloud auth activate-service-account --key-file=key.json
+
+      echo "Setting project..."
+      gcloud config set project $(GCP_PROJECT)
+
+      echo "Fetching GKE credentials..."
+      gcloud container clusters get-credentials $(GKE_CLUSTER) \
+      --region europe-west12 \
+      --project $(GCP_PROJECT)
+    displayName: "Authenticate to GKE"
+
+  # Install Helm
+  - task: HelmInstaller@1
+    inputs:
+      helmVersion: "3.12.0"
+    displayName: "Install Helm"
+
+  # Deploy PostgreSQL via Helm
+  - script: |
+      helm repo add bitnami https://charts.bitnami.com/bitnami
+
+      helm upgrade --install postgres bitnami/postgresql \
+        --namespace $(HELM_NAMESPACE) \
+        --create-namespace \
+        --set auth.postgresPassword=$(postgresPassword) \
+        --set primary.persistence.enabled=true \
+        --set primary.persistence.size=20Gi \
+        --set primary.persistence.storageClass=standard-rwo \
+        --set metrics.enabled=true
+
+    displayName: "Deploy PostgreSQL to GKE"
