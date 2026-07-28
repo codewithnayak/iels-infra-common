@@ -1,0 +1,18 @@
+global:
+  leaderElection:
+    namespace: kube-system
+
+securityContext: {}
+podSecurityContext: {}
+
+webhook:
+  securityContext: {}
+  podSecurityContext: {}
+
+cainjector:
+  securityContext: {}
+  podSecurityContext: {}
+
+startupapicheck:
+  securityContext: {}
+  podSecurityContext: {}
