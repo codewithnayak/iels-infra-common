@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cosmos-emulator
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cosmos-emulator
+  template:
+    metadata:
+      labels:
+        app: cosmos-emulator
+    spec:
+      containers:
+        - name: cosmos-emulator
+          image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+          env:
+            - name: AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE
+              value: "0.0.0.0"
+            - name: COSMOS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: COSMOS_KEY
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: cosmos-storage
+              mountPath: /data
+      volumes:
+        - name: cosmos-storage
+          persistentVolumeClaim:
+            claimName: cosmos-pvc

@@ -1,0 +1,36 @@
+namespace: dev-databases
+
+storageClass: standard-ssd
+
+postgres:
+  storage: 20Gi
+
+redis:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "1Gi"
+    limits:
+      cpu: "500m"
+      memory: "2Gi"
+
+  config:
+    maxmemory: "2gb"
+    maxmemory_policy: "allkeys-lru"
+
+
+cosmos:
+  storage: 20Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    postgres: postgres.dev.yourcompany.com
+    redis: redis.dev.yourcompany.com
+    cosmos: cosmos.dev.yourcompany.com
+  tls:
+    enabled: true
+    secretName: dev-databases-tls

@@ -1,0 +1,49 @@
+trigger:
+  - none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - name: AZURE_SUBSCRIPTION
+    value: "YOUR-AZURE-SERVICE-CONNECTION"
+
+  - name: APIM_NAME
+    value: "iels-apim"
+  - name: APIM_RG
+    value: "rg-iels-apim"
+
+  - name: API_NAME
+    value: "case-manager-api"
+  - name: API_DISPLAY_NAME
+    value: "Case Manager API"
+  - name: API_PATH
+    value: "case"
+
+  - name: WEBAPP_NAME
+    value: "iels-case-manager-app"
+  - name: WEBAPP_RG
+    value: "rg-iels-case"
+
+steps:
+  - task: AzureCLI@2
+    displayName: "Create/Update APIM API"
+    inputs:
+      azureSubscription: "$(AZURE_SUBSCRIPTION)"
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        BACKEND_URL=$(az webapp show \
+          --name $(WEBAPP_NAME) \
+          --resource-group $(WEBAPP_RG) \
+          --query defaultHostName \
+          -o tsv)
+
+        az apim api create \
+          --resource-group $(APIM_RG) \
+          --service-name $(APIM_NAME) \
+          --api-id $(API_NAME) \
+          --path "$(API_PATH)" \
+          --display-name "$(API_DISPLAY_NAME)" \
+          --protocols https \
+          --service-url "https://${BACKEND_URL}"

@@ -1,0 +1,71 @@
+trigger:
+  - none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  GKE_CLUSTER: "your-gke-cluster"
+  GKE_ZONE: "your-gke-zone"
+  GKE_PROJECT: "your-gcp-project"
+  K8S_NAMESPACE: "dev-databases"
+
+steps:
+  # ------------------------------------------------------------
+  # Authenticate to GCP
+  # ------------------------------------------------------------
+  - task: Bash@3
+    displayName: "Authenticate to GCP"
+    inputs:
+      targetType: inline
+      script: |
+        echo "Authenticating to GCP..."
+        gcloud auth activate-service-account --key-file=$(GCP_SERVICE_ACCOUNT_JSON)
+        gcloud config set project $(GKE_PROJECT)
+        gcloud container clusters get-credentials $(GKE_CLUSTER) --zone $(GKE_ZONE)
+
+  # ------------------------------------------------------------
+  # Ensure namespace exists
+  # ------------------------------------------------------------
+  - task: Bash@3
+    displayName: "Ensure namespace exists"
+    inputs:
+      targetType: inline
+      script: |
+        kubectl get ns $(K8S_NAMESPACE) || kubectl create ns $(K8S_NAMESPACE)
+
+  # ------------------------------------------------------------
+  # Create Kubernetes Secrets (secure)
+  # Values come from Azure DevOps Library (secret variables)
+  # ------------------------------------------------------------
+  - task: Bash@3
+    displayName: "Create database secrets"
+    inputs:
+      targetType: inline
+      script: |
+        kubectl delete secret db-secrets -n $(K8S_NAMESPACE) --ignore-not-found
+        kubectl create secret generic db-secrets \
+          --namespace $(K8S_NAMESPACE) \
+          --from-literal=POSTGRES_USER=$(POSTGRES_USER) \
+          --from-literal=POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
+          --from-literal=POSTGRES_DB=$(POSTGRES_DB) \
+          --from-literal=COSMOS_KEY=$(COSMOS_KEY)
+
+  # ------------------------------------------------------------
+  # Install Helm
+  # ------------------------------------------------------------
+  - task: HelmInstaller@1
+    displayName: "Install Helm"
+    inputs:
+      helmVersionToInstall: "latest"
+
+  # ------------------------------------------------------------
+  # Deploy Helm chart (Postgres + Redis + Cosmos)
+  # ------------------------------------------------------------
+  - task: Bash@3
+    displayName: "Deploy dev-databases Helm chart"
+    inputs:
+      targetType: inline
+      script: |
+        helm upgrade --install dev-databases ./helm/dev-databases \
+          --namespace $(K8S_NAMESPACE)

@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: databases-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  tls:
+    - hosts:
+        - postgres.dev.company.com
+        - redis.dev.company.com
+        - cosmos.dev.company.com
+      secretName: databases-tls
+
+  rules:
+    - host: postgres.dev.company.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: postgres-svc
+                port:
+                  number: {{ .Values.tcpPorts.postgres }}
+
+    - host: redis.dev.company.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: redis-svc
+                port:
+                  number: {{ .Values.tcpPorts.redis }}
+
+    - host: cosmos.dev.company.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cosmos-svc
+                port:
+                  number: {{ .Values.tcpPorts.cosmos }}
