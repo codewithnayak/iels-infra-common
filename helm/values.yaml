@@ -18,7 +18,7 @@ redis:
 
   config:
     maxmemory: "2gb"
-    maxmemory_policy: "allkeys-lru"
+    maxmemory-policy: "allkeys-lru"
 
 cosmos:
   storage: 20Gi
