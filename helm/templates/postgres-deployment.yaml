@@ -27,11 +27,6 @@ spec:
                 secretKeyRef:
                   name: db-secrets
                   key: POSTGRES_PASSWORD
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: db-secrets
-                  key: POSTGRES_DB
           ports:
             - containerPort: 5432
           volumeMounts:

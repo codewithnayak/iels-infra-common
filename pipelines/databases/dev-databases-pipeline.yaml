@@ -5,24 +5,54 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  GKE_CLUSTER: "your-gke-cluster"
-  GKE_ZONE: "your-gke-zone"
-  GKE_PROJECT: "your-gcp-project"
-  K8S_NAMESPACE: "dev-databases"
+  - group: GKE-Variables # contains gcpKeyBase64, dockerhubUser, dockerhubPass
+
+  - name: GCP_KEY_BASE64
+    value: "$(gcpKeyBase64)" # Base64 encoded JSON key
+
+  - name: GCP_PROJECT
+    value: "iels-org"
+
+  - name: GKE_CLUSTER
+    value: "autopilot-cluster-1"
+
+  - name: HELM_NAMESPACE
+    value: "dev-databases"
 
 steps:
-  # ------------------------------------------------------------
-  # Authenticate to GCP
-  # ------------------------------------------------------------
-  - task: Bash@3
-    displayName: "Authenticate to GCP"
-    inputs:
-      targetType: inline
-      script: |
-        echo "Authenticating to GCP..."
-        gcloud auth activate-service-account --key-file=$(GCP_SERVICE_ACCOUNT_JSON)
-        gcloud config set project $(GKE_PROJECT)
-        gcloud container clusters get-credentials $(GKE_CLUSTER) --zone $(GKE_ZONE)
+  # Install gcloud CLI
+  - script: |
+      echo "Installing Google Cloud SDK..."
+      sudo apt-get update
+      sudo apt-get install -y apt-transport-https ca-certificates gnupg
+      echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+      sudo apt-get update && sudo apt-get install -y google-cloud-cli
+    displayName: "Install Google Cloud SDK"
+
+  # ⭐ Install GKE auth plugin (required for kubectl/helm)
+  - script: |
+      echo "Installing GKE auth plugin..."
+      sudo apt-get update
+      sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+    displayName: "Install GKE Auth Plugin"
+
+  # Authenticate to GKE using Base64 key
+  - script: |
+      echo "Decoding GCP key..."
+      echo "$GCP_KEY_BASE64" | base64 --decode > key.json
+
+      echo "Authenticating..."
+      gcloud auth activate-service-account --key-file=key.json
+
+      echo "Setting project..."
+      gcloud config set project $(GCP_PROJECT)
+
+      echo "Fetching GKE credentials..."
+      gcloud container clusters get-credentials $(GKE_CLUSTER) \
+      --region europe-west12 \
+      --project $(GCP_PROJECT)
+    displayName: "Authenticate to GKE"
 
   # ------------------------------------------------------------
   # Ensure namespace exists
@@ -32,7 +62,7 @@ steps:
     inputs:
       targetType: inline
       script: |
-        kubectl get ns $(K8S_NAMESPACE) || kubectl create ns $(K8S_NAMESPACE)
+        kubectl get ns $(HELM_NAMESPACE) || kubectl create ns $(HELM_NAMESPACE)
 
   # ------------------------------------------------------------
   # Create Kubernetes Secrets (secure)
@@ -43,12 +73,11 @@ steps:
     inputs:
       targetType: inline
       script: |
-        kubectl delete secret db-secrets -n $(K8S_NAMESPACE) --ignore-not-found
+        kubectl delete secret db-secrets -n $(HELM_NAMESPACE) --ignore-not-found
         kubectl create secret generic db-secrets \
-          --namespace $(K8S_NAMESPACE) \
+          --namespace $(HELM_NAMESPACE) \
           --from-literal=POSTGRES_USER=$(POSTGRES_USER) \
           --from-literal=POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
-          --from-literal=POSTGRES_DB=$(POSTGRES_DB) \
           --from-literal=COSMOS_KEY=$(COSMOS_KEY)
 
   # ------------------------------------------------------------
@@ -67,5 +96,5 @@ steps:
     inputs:
       targetType: inline
       script: |
-        helm upgrade --install dev-databases ./helm/dev-databases \
-          --namespace $(K8S_NAMESPACE)
+        helm upgrade --install dev-databases ./helm \
+          --namespace $(HELM_NAMESPACE)
