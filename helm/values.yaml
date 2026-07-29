@@ -26,7 +26,7 @@ cosmos:
 tcpPorts:
   postgres: 5432
   redis: 6379
-  cosmos: 8081
+  cosmos: 10251
 
 ingress:
   enabled: true
