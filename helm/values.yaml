@@ -1,6 +1,6 @@
 namespace: dev-databases
 
-storageClass: standard-ssd
+storageClass: standard-rwo
 
 postgres:
   storage: 20Gi
