@@ -16,19 +16,33 @@ spec:
       containers:
         - name: cosmos-emulator
           image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+
+          # Autopilot-friendly resource requests
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+
           env:
             - name: AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE
               value: "0.0.0.0"
+
             - name: COSMOS_KEY
               valueFrom:
                 secretKeyRef:
                   name: db-secrets
                   key: COSMOS_KEY
+
           ports:
             - containerPort: 8081
+
           volumeMounts:
             - name: cosmos-storage
               mountPath: /data
+
       volumes:
         - name: cosmos-storage
           persistentVolumeClaim:
