@@ -31,6 +31,8 @@ spec:
               value: "0.0.0.0"
             - name: AZURE_COSMOS_EMULATOR_ENABLE_HTTP
               value: "true"
+            - name: AZURE_COSMOS_EMULATOR_DISABLE_SSL
+              value: "true"
 
             - name: COSMOS_KEY
               valueFrom:
