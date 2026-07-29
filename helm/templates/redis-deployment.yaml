@@ -28,6 +28,8 @@ spec:
               memory: {{ .Values.redis.resources.limits.memory }}
           command: ["redis-server"]
           args:
-            - "--maxmemory={{ .Values.redis.config.maxmemory }}"
-            - "--maxmemory-policy={{ index .Values.redis.config "maxmemory-policy" }}"
+            - "--maxmemory"
+            - "{{ .Values.redis.config.maxmemory }}"
+            - "--maxmemory-policy"
+            - "{{ index .Values.redis.config "maxmemory-policy" }}"
 {{- end }}
