@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cwa-ingress
+  namespace: iels-dev
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.global-static-ip-name: ingress-ip   # <-- STATIC IP NAME
+spec:
+  tls:
+    - hosts:
+        - applications.ielsportal.com
+      secretName: cwa-tls-secret
+
+  rules:
+    - host: applications.ielsportal.com
+      http:
+        paths:
+          - path: /sso
+            pathType: Prefix
+            backend:
+              service:
+                name: iels-sso-web-app
+                port:
+                  number: 80
+
+          - path: /police
+            pathType: Prefix
+            backend:
+              service:
+                name: iels-ps-web-app
+                port:
+                  number: 80
+
+          - path: /portal
+            pathType: Prefix
+            backend:
+              service:
+                name: iels-unified-web-app
+                port:
+                  number: 80
