@@ -14,7 +14,7 @@ variables:
     value: "iels-org"
 
   - name: GKE_CLUSTER
-    value: "autopilot-cluster-1"
+    value: "kcl-iels-platform"
 
   - name: HELM_NAMESPACE
     value: "dev-databases"
@@ -50,7 +50,7 @@ steps:
 
       echo "Fetching GKE credentials..."
       gcloud container clusters get-credentials $(GKE_CLUSTER) \
-      --region europe-west12 \
+      --zone europe-west2-a \
       --project $(GCP_PROJECT)
     displayName: "Authenticate to GKE"
 

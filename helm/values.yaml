@@ -20,13 +20,10 @@ redis:
     maxmemory: "2gb"
     maxmemory-policy: "allkeys-lru"
 
-cosmos:
-  storage: 20Gi
 
 tcpPorts:
   postgres: 5432
   redis: 6379
-  cosmos: 8081
 
 ingress:
   enabled: true
@@ -34,7 +31,6 @@ ingress:
   hosts:
     postgres: postgres-dev.ielsportal.com
     redis: redis-dev.ielsportal.com
-    cosmos: cosmos-dev.ielsportal.com
   tls:
     enabled: true
     secretName: wildcard-secret

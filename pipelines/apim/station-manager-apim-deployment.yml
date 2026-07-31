@@ -6,7 +6,7 @@ pool:
 
 variables:
   - name: AZURE_SUBSCRIPTION
-    value: "YOUR-AZURE-SERVICE-CONNECTION"
+    value: "iels-azure-connection"
 
   # APIM details
   - name: APIM_NAME

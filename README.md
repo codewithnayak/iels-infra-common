@@ -31,3 +31,7 @@ kubectl create secret generic db-secrets \
   --from-literal=POSTGRES_DB=devdb \
   --from-literal=COSMOS_KEY="C2FBB...=="
 ```
+
+## GKE Cluster Details
+
+gcloud container clusters get-credentials kcl-iels-platform --zone europe-west2-a --project iels-org
