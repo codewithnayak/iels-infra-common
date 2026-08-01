@@ -25,7 +25,7 @@ spec:
                 port:
                   number: 80
 
-          - path: /police
+          - path: /station
             pathType: Prefix
             backend:
               service:
