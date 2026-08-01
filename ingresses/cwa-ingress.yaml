@@ -4,10 +4,10 @@ metadata:
   name: cwa-ingress
   namespace: iels-dev
   annotations:
-    kubernetes.io/ingress.class: nginx
+    
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    kubernetes.io/ingress.global-static-ip-name: ingress-ip   # <-- STATIC IP NAME
 spec:
+  ingressClassName: nginx
   tls:
     - hosts:
         - applications.ielsportal.com
